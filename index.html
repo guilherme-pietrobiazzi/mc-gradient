@@ -1,0 +1,1432 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MC Gradient RGB — Gerador de Texto Degradê RGB e Hex para Minecraft</title>
+    <meta name="description" content="Crie textos com degradê RGB e Hex para Minecraft em segundos. Suporte para EssentialsX (&#RRGGBB), Legacy Hex (&x), MiniMessage, MOTD e JSON Tellraw.">
+    <meta name="keywords" content="minecraft rgb gradient, gerador texto degrade minecraft, hex minecraft motd, essentials hex, minimessage gradient">
+    <meta name="author" content="Guilherme Antonio Pietrobiazzi">
+
+    <!-- Favicon SVG Inline e Meta Tags Open Graph (SEO & Compartilhamento) -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2310b981' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z'/%3E%3Cpolyline points='3.27 6.96 12 12.01 20.73 6.96'/%3E%3Cline x1='12' y1='22.08' x2='12' y2='12'/%3E%3C/svg%3E">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="MC Gradient RGB — Gerador de Texto Degradê para Minecraft">
+    <meta property="og:description" content="Gere textos degradê Hex/RGB para chat, nicks, placas e MOTD do Minecraft com prévia em tempo real.">
+
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Fonte Inter e JetBrains Mono para códigos -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            overflow-x: hidden;
+        }
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        /* Sombra clássica do texto dentro do Minecraft */
+        .mc-shadow {
+            text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.85);
+        }
+        /* Estilização limpa do input[type="color"] */
+        input[type="color"] {
+            -webkit-appearance: none;
+            appearance: none;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+        }
+        input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+        input[type="color"]::-webkit-color-swatch {
+            border: 1px solid #475569;
+            border-radius: 0.375rem;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col selection:bg-emerald-500 selection:text-slate-950">
+
+    <!-- ==================== HEADER ==================== -->
+    <header class="bg-slate-800/90 border-b border-slate-700/80 backdrop-blur-sm sticky top-0 z-20">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-blue-500 flex items-center justify-center shadow-lg shadow-emerald-500/20 shrink-0">
+                    <svg class="w-6 h-6 text-slate-950" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                        <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                        <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight bg-gradient-to-r from-emerald-400 to-blue-400 bg-clip-text text-transparent">
+                        MC Gradient RGB
+                    </h1>
+                    <p class="text-xs sm:text-sm text-slate-400">
+                        Gerador de texto degradê Hex/RGB para chat, placas e MOTD de Minecraft
+                    </p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <!-- Indicador dinâmico de modo Offline -->
+                <span id="offlineBadge" class="hidden text-xs font-medium px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/40">
+                    Modo Offline
+                </span>
+                <span class="text-xs font-medium px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                    Java 1.16+ • RGB &amp; Hex
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- ==================== CONTEÚDO PRINCIPAL (Grid responsivo) ==================== -->
+    <main class="max-w-6xl w-full mx-auto px-4 py-6 flex-1">
+        <div class="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6 items-start">
+
+            <!-- COLUNA ESQUERDA: SERVIÇO / FERRAMENTA -->
+            <div class="space-y-6">
+                <section aria-labelledby="tool-heading" class="bg-slate-800 border border-slate-700/80 rounded-2xl p-5 sm:p-6 shadow-xl">
+                    <h2 id="tool-heading" class="sr-only">Configurador de Texto Degradê</h2>
+
+                    <!-- Entrada de Texto -->
+                    <div class="mb-5">
+                        <div class="flex justify-between items-center mb-2">
+                            <label for="inputText" class="text-sm font-semibold text-slate-300">
+                                Seu Texto
+                            </label>
+                            <span id="charCounter" class="text-xs text-slate-400 font-mono">22 / 256 caracteres</span>
+                        </div>
+                        <input 
+                            type="text" 
+                            id="inputText" 
+                            value="Bem-vindo ao Servidor!" 
+                            maxlength="256" 
+                            placeholder="Digite o texto ou MOTD aqui..."
+                            class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition"
+                        >
+                        <!-- Presets rápidos de gradiente -->
+                        <div class="flex flex-wrap items-center gap-2 mt-2.5">
+                            <span class="text-xs text-slate-400 mr-1">Presets:</span>
+                            <button type="button" data-start="#10b981" data-end="#3b82f6" class="preset-btn text-xs px-2.5 py-1 rounded-md bg-slate-900 hover:bg-slate-700 border border-slate-700 text-slate-300 transition flex items-center gap-1.5 cursor-pointer">
+                                <span class="w-2.5 h-2.5 rounded-full bg-gradient-to-r from-emerald-500 to-blue-500"></span> Esmeralda
+                            </button>
+                            <button type="button" data-start="#f59e0b" data-end="#ef4444" class="preset-btn text-xs px-2.5 py-1 rounded-md bg-slate-900 hover:bg-slate-700 border border-slate-700 text-slate-300 transition flex items-center gap-1.5 cursor-pointer">
+                                <span class="w-2.5 h-2.5 rounded-full bg-gradient-to-r from-amber-500 to-red-500"></span> Fogo
+                            </button>
+                            <button type="button" data-start="#ec4899" data-end="#8b5cf6" class="preset-btn text-xs px-2.5 py-1 rounded-md bg-slate-900 hover:bg-slate-700 border border-slate-700 text-slate-300 transition flex items-center gap-1.5 cursor-pointer">
+                                <span class="w-2.5 h-2.5 rounded-full bg-gradient-to-r from-pink-500 to-violet-500"></span> Nether
+                            </button>
+                            <button type="button" data-start="#f97316" data-end="#eab308" class="preset-btn text-xs px-2.5 py-1 rounded-md bg-slate-900 hover:bg-slate-700 border border-slate-700 text-slate-300 transition flex items-center gap-1.5 cursor-pointer">
+                                <span class="w-2.5 h-2.5 rounded-full bg-gradient-to-r from-orange-500 to-yellow-500"></span> Pôr do Sol
+                            </button>
+                            <button type="button" data-start="#10b981" data-mid="#f8fafc" data-end="#3b82f6" class="preset-btn text-xs px-2.5 py-1 rounded-md bg-slate-900 hover:bg-slate-700 border border-slate-700 text-slate-300 transition flex items-center gap-1.5 cursor-pointer">
+                                <span class="w-2.5 h-2.5 rounded-full bg-gradient-to-r from-emerald-500 via-white to-blue-500"></span> Cristal (3 Cores)
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Seletores de Cor Inicial, Cor Intermediária (Opcional) e Final -->
+                    <div class="mb-5">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm font-semibold text-slate-300">Paleta do Degradê</span>
+                            <button 
+                                type="button" 
+                                id="toggleMidColorBtn" 
+                                class="text-xs font-medium px-2.5 py-1 rounded-md bg-slate-900 hover:bg-slate-700 border border-slate-700 text-emerald-400 transition cursor-pointer"
+                            >
+                                + Adicionar Cor do Meio
+                            </button>
+                        </div>
+
+                        <div id="colorsGrid" class="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-3 items-end">
+                            <div>
+                                <label for="colorStart" class="block text-xs font-medium text-slate-400 mb-1.5">
+                                    Cor Inicial
+                                </label>
+                                <div class="flex items-center gap-3 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2">
+                                    <input type="color" id="colorStart" value="#10b981" class="w-9 h-9 shrink-0">
+                                    <span id="hexStartLabel" class="font-mono text-sm text-slate-200 select-all">#10B981</span>
+                                </div>
+                            </div>
+
+                            <!-- Botão de troca: Inicial <-> Meio (visível apenas quando 3 cores estão ativas) -->
+                            <div id="swapStartMidWrapper" class="hidden flex justify-center">
+                                <button 
+                                    type="button" 
+                                    id="swapStartMidBtn" 
+                                    title="Trocar Cor Inicial com Cor do Meio"
+                                    aria-label="Trocar cor inicial com cor do meio"
+                                    class="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-emerald-400 transition cursor-pointer"
+                                >
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                                    </svg>
+                                </button>
+                            </div>
+
+                            <!-- Terceira cor opcional (centro do gradiente) -->
+                            <div id="midColorContainer" class="hidden">
+                                <label for="colorMid" class="block text-xs font-medium text-slate-400 mb-1.5">
+                                    Cor do Meio
+                                </label>
+                                <div class="flex items-center gap-3 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2">
+                                    <input type="color" id="colorMid" value="#f8fafc" class="w-9 h-9 shrink-0">
+                                    <span id="hexMidLabel" class="font-mono text-sm text-slate-200 select-all">#F8FAFC</span>
+                                </div>
+                            </div>
+
+                            <div class="flex justify-center">
+                                <button 
+                                    type="button" 
+                                    id="swapColorsBtn" 
+                                    title="Inverter cores"
+                                    aria-label="Inverter cores adjacentes"
+                                    class="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-emerald-400 transition cursor-pointer"
+                                >
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                                    </svg>
+                                </button>
+                            </div>
+
+                            <div>
+                                <label for="colorEnd" class="block text-xs font-medium text-slate-400 mb-1.5">
+                                    Cor Final
+                                </label>
+                                <div class="flex items-center gap-3 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2">
+                                    <input type="color" id="colorEnd" value="#3b82f6" class="w-9 h-9 shrink-0">
+                                    <span id="hexEndLabel" class="font-mono text-sm text-slate-200 select-all">#3B82F6</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Formato de Saída e Estilos (B / I / U / S) -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                        <div>
+                            <label for="formatSelect" class="block text-sm font-semibold text-slate-300 mb-2">
+                                Formato do Plugin / Jogo
+                            </label>
+                            <select 
+                                id="formatSelect"
+                                class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-emerald-500 transition"
+                            >
+                                <option value="ampersand">Spigot / EssentialsX (&amp;#RRGGBB)</option>
+                                <option value="legacy">Legacy Hex (&amp;x&amp;R&amp;R&amp;G&amp;G&amp;B&amp;B)</option>
+                                <option value="minimessage">Paper / MiniMessage (&lt;gradient&gt;)</option>
+                                <option value="motd">Server MOTD (\u00A7x...)</option>
+                                <option value="json">JSON Tellraw (/tellraw)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <span class="block text-sm font-semibold text-slate-300 mb-2">
+                                Estilos Adicionais
+                            </span>
+                            <div class="grid grid-cols-4 gap-2">
+                                <button type="button" id="btnBold" title="Negrito (&l)" class="py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm font-bold text-slate-300 hover:bg-slate-700 transition cursor-pointer">
+                                    B
+                                </button>
+                                <button type="button" id="btnItalic" title="Itálico (&o)" class="py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm italic text-slate-300 hover:bg-slate-700 transition cursor-pointer">
+                                    I
+                                </button>
+                                <button type="button" id="btnUnderline" title="Sublinhado (&n)" class="py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm underline text-slate-300 hover:bg-slate-700 transition cursor-pointer">
+                                    U
+                                </button>
+                                <button type="button" id="btnStrike" title="Riscado (&m)" class="py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm line-through text-slate-300 hover:bg-slate-700 transition cursor-pointer">
+                                    S
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Caixa de Pré-visualização -->
+                    <div class="mb-6">
+                        <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                            <span class="text-sm font-semibold text-slate-300">Pré-visualização no Jogo</span>
+                            <div class="flex items-center gap-2">
+                                <label for="previewSizeSelect" class="text-xs text-slate-400">Tamanho:</label>
+                                <select id="previewSizeSelect" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-xs text-slate-300 focus:outline-none focus:border-emerald-500">
+                                    <option value="auto">Auto (Responsivo)</option>
+                                    <option value="sm">Pequeno (Chat)</option>
+                                    <option value="md">Médio</option>
+                                    <option value="lg">Grande (Título)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div 
+                            id="previewBox" 
+                            class="w-full min-h-[84px] h-auto bg-slate-950 border border-slate-700/90 rounded-xl p-4 sm:p-5 text-center text-lg sm:text-2xl leading-relaxed mc-shadow select-all whitespace-normal"
+                            style="overflow-wrap: anywhere; word-break: normal;"
+                        ></div>
+                    </div>
+
+                    <!-- Código Gerado, Indicador de Limite Vanilla e Botões de Ação (Web APIs) -->
+                    <div>
+                        <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                            <label for="outputCode" class="text-sm font-semibold text-slate-300">
+                                Código Pronto para Colar
+                            </label>
+                            <span id="vanillaLimitBadge" class="text-[11px] font-mono px-2 py-0.5 rounded-md border bg-emerald-500/10 border-emerald-500/40 text-emerald-300">
+                                0 chars • Cabe no chat vanilla (≤ 256)
+                            </span>
+                        </div>
+                        <textarea 
+                            id="outputCode" 
+                            readonly 
+                            rows="3"
+                            class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3.5 font-mono text-xs sm:text-sm text-emerald-300 focus:outline-none focus:border-emerald-500 resize-y"
+                        ></textarea>
+
+                        <!-- Botões de Ação (Clipboard API, File/Blob API, Web Share API e localStorage) -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 mt-3">
+                            <button 
+                                type="button" 
+                                id="copyBtn" 
+                                class="lg:col-span-2 bg-emerald-500 hover:bg-emerald-400 active:scale-[0.99] text-slate-950 font-bold py-2.5 px-4 rounded-xl shadow-lg shadow-emerald-500/20 transition flex items-center justify-center gap-2 cursor-pointer"
+                            >
+                                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                </svg>
+                                <span id="copyBtnText">Copiar Código</span>
+                            </button>
+
+                            <button 
+                                type="button" 
+                                id="downloadBtn" 
+                                title="Baixar arquivo .txt (File/Blob API)"
+                                class="bg-slate-900 hover:bg-slate-700 border border-slate-700 text-slate-200 font-semibold py-2.5 px-3 rounded-xl transition flex items-center justify-center gap-1.5 text-sm cursor-pointer"
+                            >
+                                <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                                </svg>
+                                <span>Baixar .txt</span>
+                            </button>
+
+                            <button 
+                                type="button" 
+                                id="shareBtn" 
+                                title="Compartilhar gradiente (Web Share API)"
+                                class="bg-slate-900 hover:bg-slate-700 border border-slate-700 text-slate-200 font-semibold py-2.5 px-3 rounded-xl transition flex items-center justify-center gap-1.5 text-sm cursor-pointer"
+                            >
+                                <svg class="w-4 h-4 text-blue-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <circle cx="18" cy="5" r="3"></circle>
+                                    <circle cx="6" cy="12" r="3"></circle>
+                                    <circle cx="18" cy="19" r="3"></circle>
+                                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                                </svg>
+                                <span id="shareBtnText">Partilhar</span>
+                            </button>
+                        </div>
+
+                        <!-- Aviso contextual discreto para feedback de Web APIs -->
+                        <div id="webApiToast" role="status" aria-live="polite" class="hidden mt-3 text-xs rounded-xl px-3.5 py-2.5 border transition"></div>
+                    </div>
+                </section>
+
+                <!-- ==================== TESTADOR DE MOTD EM SERVIDOR REAL (APIs Públicas + Promise.all) ==================== -->
+                <section aria-labelledby="motd-tester-heading" class="bg-slate-800 border border-slate-700/80 rounded-2xl p-5 sm:p-6 shadow-xl">
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                        <div>
+                            <h3 id="motd-tester-heading" class="text-base font-bold text-slate-100">
+                                Testar MOTD na Lista de Servidores
+                            </h3>
+                            <p class="text-xs text-slate-400">
+                                Consulte um servidor público para visualizar como o seu degradê ficaria no MOTD real.
+                            </p>
+                        </div>
+                        <span class="text-[11px] font-mono px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-400 border border-blue-500/30">
+                            APIs Públicas • Promise.all
+                        </span>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row gap-2.5 mb-4">
+                        <input 
+                            type="text" 
+                            id="serverIpInput" 
+                            value="mc.hypixel.net" 
+                            placeholder="Ex: mc.hypixel.net ou jogar.seuservidor.com.br"
+                            class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition"
+                        >
+                        <button 
+                            type="button" 
+                            id="fetchServerBtn" 
+                            class="bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm px-4 py-2.5 rounded-xl transition flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+                        >
+                            <span id="fetchBtnLabel">Buscar Servidor</span>
+                        </button>
+                    </div>
+
+                    <!-- Card estilo Lista de Servidores do Minecraft -->
+                    <div class="bg-[#141414] border border-slate-700 rounded-xl p-3.5 flex items-center gap-3.5">
+                        <img 
+                            id="serverIconImg" 
+                            src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%231e293b'/%3E%3Crect x='14' y='14' width='36' height='36' rx='6' fill='%2310b981' fill-opacity='0.2' stroke='%2310b981' stroke-width='2'/%3E%3Ctext x='32' y='38' font-family='monospace' font-size='18' font-weight='bold' fill='%2310b981' text-anchor='middle'%3EMC%3C/text%3E%3C/svg%3E" 
+                            alt="Ícone do servidor Minecraft"
+                            class="w-14 h-14 sm:w-16 sm:h-16 rounded-lg bg-slate-800 border border-slate-700 shrink-0 object-cover"
+                        >
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center justify-between gap-2 mb-1">
+                                <span id="serverTitleLabel" class="font-bold text-sm text-slate-100 truncate">mc.hypixel.net</span>
+                                <span id="serverPlayersLabel" class="text-xs font-mono text-slate-400 shrink-0">Aguardando consulta</span>
+                            </div>
+                            <!-- Linha 1: Seu gradiente aplicado ao MOTD -->
+                            <div id="motdGradientLine" class="text-xs sm:text-sm mc-shadow truncate"></div>
+                            <!-- Linha 2: MOTD original obtido da API -->
+                            <div id="motdApiLine" class="text-xs text-slate-400 font-mono truncate mt-0.5">
+                                Clique em "Buscar Servidor" para consultar status e MOTD via API.
+                            </div>
+                        </div>
+                    </div>
+
+                    <p id="apiStatusFeedback" class="text-xs text-slate-400 mt-2 hidden"></p>
+                </section>
+
+                <!-- ==================== FAVORITOS SALVOS (localStorage) ==================== -->
+                <section aria-labelledby="favorites-heading" class="bg-slate-800 border border-slate-700/80 rounded-2xl p-5 sm:p-6 shadow-xl">
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                        <div>
+                            <h3 id="favorites-heading" class="text-base font-bold text-slate-100">
+                                Favoritos Salvos no Navegador
+                            </h3>
+                            <p class="text-xs text-slate-400">
+                                Suas combinações ficam salvas localmente neste dispositivo.
+                            </p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button 
+                                type="button" 
+                                id="saveFavoriteBtn" 
+                                class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/40 transition cursor-pointer"
+                            >
+                                + Salvar Favorito
+                            </button>
+                            <button 
+                                type="button" 
+                                id="clearFavoritesBtn" 
+                                class="text-xs font-medium px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-rose-950/60 text-slate-400 hover:text-rose-400 border border-slate-700 transition cursor-pointer hidden"
+                            >
+                                Limpar
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="favoritesList" class="space-y-2"></div>
+                </section>
+            </div>
+
+            <!-- ==================== COLUNA DIREITA: ESPAÇO PUBLICITÁRIO (300x250 Desktop) ==================== -->
+            <aside aria-label="Publicidade" class="w-full flex flex-col items-center lg:sticky lg:top-24 space-y-4">
+                <div class="w-full max-w-[300px] min-h-[250px] bg-slate-800/70 border border-dashed border-slate-600 rounded-2xl flex flex-col items-center justify-center p-4 text-center">
+                    <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                        Espaço Publicitário
+                    </span>
+                    <div class="w-full h-[200px] bg-slate-900/80 rounded-xl flex flex-col items-center justify-center p-4 border border-slate-800">
+                        <p class="text-xs text-slate-400 font-medium">Banner 300x250</p>
+                        <p class="text-[11px] text-slate-500 mt-1">
+                            Área reservada para Google AdSense ou afiliados de hospedagem Minecraft.
+                        </p>
+                    </div>
+                </div>
+            </aside>
+
+        </div>
+
+        <!-- ==================== CONTEÚDO COMPLEMENTAR / INSTRUÇÕES & MONETIZAÇÃO ==================== -->
+        <section aria-labelledby="guide-heading" class="mt-8 bg-slate-800 border border-slate-700/80 rounded-2xl p-6 shadow-lg">
+            <h2 id="guide-heading" class="text-lg font-bold text-slate-100 mb-3">
+                Como aplicar o texto degradê RGB no seu servidor Minecraft
+            </h2>
+            <p class="text-sm text-slate-300 leading-relaxed mb-4">
+                A partir da atualização <strong>Minecraft Java 1.16 (Nether Update)</strong>, o jogo passou a suportar mais de 16 milhões de cores em formato hexadecimal. Utilize o formato adequado ao seu plugin ou arquivo:
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div class="bg-slate-900/80 border border-slate-700/70 rounded-xl p-4">
+                    <h3 class="font-semibold text-emerald-400 mb-1">Spigot / EssentialsX (&amp;#RRGGBB)</h3>
+                    <p class="text-slate-400 text-xs leading-relaxed">
+                        Compatível com EssentialsX Chat, LuckPerms prefixes, TAB, DeluxeMenus e plugins modernos. Basta colar o código diretamente na configuração.
+                    </p>
+                </div>
+                <div class="bg-slate-900/80 border border-slate-700/70 rounded-xl p-4">
+                    <h3 class="font-semibold text-emerald-400 mb-1">Legacy Hex (&amp;x&amp;R&amp;R&amp;G&amp;G&amp;B&amp;B)</h3>
+                    <p class="text-slate-400 text-xs leading-relaxed">
+                        Sintaxe expandida nativa do BungeeCord/Spigot. Recomendada para plugins mais antigos que não convertem automaticamente a tag <code>&amp;#</code>.
+                    </p>
+                </div>
+                <div class="bg-slate-900/80 border border-slate-700/70 rounded-xl p-4">
+                    <h3 class="font-semibold text-emerald-400 mb-1">Paper / MiniMessage (&lt;gradient&gt;)</h3>
+                    <p class="text-slate-400 text-xs leading-relaxed">
+                        Sintaxe limpa e compacta usada nativamente pela API Adventure do PaperMC, Purpur e Velocity. Evita estourar o limite de caracteres do chat.
+                    </p>
+                </div>
+                <div class="bg-slate-900/80 border border-slate-700/70 rounded-xl p-4">
+                    <h3 class="font-semibold text-emerald-400 mb-1">Server MOTD (\u00A7x...)</h3>
+                    <p class="text-slate-400 text-xs leading-relaxed">
+                        Formato Unicode pronto para ser colado diretamente após <code>motd=</code> dentro do arquivo <code>server.properties</code> do servidor.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Estratégia de Monetização e Publicação -->
+            <div class="mt-5 pt-4 border-t border-slate-700/70 text-xs text-slate-400 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <p>
+                    <strong class="text-slate-300">Estratégia de Monetização:</strong> Exibição de banners não intrusivos (300x250 via Google AdSense) combinada com links de afiliados para provedores de hospedagem VPS/Minecraft (ex.: BisectHosting, Apex Hosting), aproveitando o tráfego orgânico de administradores de servidores.
+                </p>
+            </div>
+        </section>
+    </main>
+
+    <!-- ==================== FOOTER ==================== -->
+    <footer class="bg-slate-800/90 border-t border-slate-700/80 mt-10">
+        <div class="max-w-6xl mx-auto px-4 py-5 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs sm:text-sm text-slate-400">
+            <p>
+                Desenvolvido por 
+                <a 
+                    href="https://github.com/guilhermepietrobiazzi" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    class="text-emerald-400 hover:text-emerald-300 font-semibold underline decoration-emerald-500/40 underline-offset-4 transition"
+                >
+                    Guilherme Antonio Pietrobiazzi
+                </a>
+            </p>
+            <p class="text-slate-500">
+                100% Client-Side • HTML, Tailwind CSS &amp; JavaScript Puro
+            </p>
+        </div>
+    </footer>
+
+    <!-- ==================== LÓGICA DA APLICAÇÃO (JS PURO) ==================== -->
+    <script>
+        (function () {
+            'use strict';
+
+            // Chaves do localStorage (Incremento 3: Persistência)
+            const STORAGE_PREFS_KEY = 'mc_gradient_prefs_v1';
+            const STORAGE_FAVS_KEY = 'mc_gradient_favorites_v1';
+
+            // Ícone SVG inline para fallback offline-safe
+            const DEFAULT_SERVER_ICON_SVG = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%231e293b'/%3E%3Crect x='14' y='14' width='36' height='36' rx='6' fill='%2310b981' fill-opacity='0.2' stroke='%2310b981' stroke-width='2'/%3E%3Ctext x='32' y='38' font-family='monospace' font-size='18' font-weight='bold' fill='%2310b981' text-anchor='middle'%3EMC%3C/text%3E%3C/svg%3E";
+
+            // Referências do DOM
+            const offlineBadge = document.getElementById('offlineBadge');
+            const inputText = document.getElementById('inputText');
+            const charCounter = document.getElementById('charCounter');
+            const vanillaLimitBadge = document.getElementById('vanillaLimitBadge');
+            const toggleMidColorBtn = document.getElementById('toggleMidColorBtn');
+            const colorsGrid = document.getElementById('colorsGrid');
+            const swapStartMidWrapper = document.getElementById('swapStartMidWrapper');
+            const swapStartMidBtn = document.getElementById('swapStartMidBtn');
+            const midColorContainer = document.getElementById('midColorContainer');
+            const colorStart = document.getElementById('colorStart');
+            const colorMid = document.getElementById('colorMid');
+            const colorEnd = document.getElementById('colorEnd');
+            const hexStartLabel = document.getElementById('hexStartLabel');
+            const hexMidLabel = document.getElementById('hexMidLabel');
+            const hexEndLabel = document.getElementById('hexEndLabel');
+            const swapColorsBtn = document.getElementById('swapColorsBtn');
+            const formatSelect = document.getElementById('formatSelect');
+            const previewSizeSelect = document.getElementById('previewSizeSelect');
+            const previewBox = document.getElementById('previewBox');
+            const outputCode = document.getElementById('outputCode');
+            const copyBtn = document.getElementById('copyBtn');
+            const copyBtnText = document.getElementById('copyBtnText');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const shareBtn = document.getElementById('shareBtn');
+            const shareBtnText = document.getElementById('shareBtnText');
+            const webApiToast = document.getElementById('webApiToast');
+            const btnBold = document.getElementById('btnBold');
+            const btnItalic = document.getElementById('btnItalic');
+            const btnUnderline = document.getElementById('btnUnderline');
+            const btnStrike = document.getElementById('btnStrike');
+            const presetBtns = document.querySelectorAll('.preset-btn');
+
+            // Referências do Testador de Servidor (APIs públicas)
+            const serverIpInput = document.getElementById('serverIpInput');
+            const fetchServerBtn = document.getElementById('fetchServerBtn');
+            const fetchBtnLabel = document.getElementById('fetchBtnLabel');
+            const serverIconImg = document.getElementById('serverIconImg');
+            const serverTitleLabel = document.getElementById('serverTitleLabel');
+            const serverPlayersLabel = document.getElementById('serverPlayersLabel');
+            const motdGradientLine = document.getElementById('motdGradientLine');
+            const motdApiLine = document.getElementById('motdApiLine');
+            const apiStatusFeedback = document.getElementById('apiStatusFeedback');
+
+            // Referências dos Favoritos (localStorage)
+            const saveFavoriteBtn = document.getElementById('saveFavoriteBtn');
+            const clearFavoritesBtn = document.getElementById('clearFavoritesBtn');
+            const favoritesList = document.getElementById('favoritesList');
+
+            // Estado da formatação e parada intermediária
+            let useMidColor = false;
+            let isBold = false;
+            let isItalic = false;
+            let isUnderline = false;
+            let isStrike = false;
+            let copyTimeout = null;
+            let shareTimeout = null;
+            let toastTimeout = null;
+
+            /**
+             * Resiliência Offline: Monitora estado de conectividade do navegador
+             */
+            function updateNetworkStatusUI() {
+                const online = navigator.onLine;
+                if (online) {
+                    offlineBadge.classList.add('hidden');
+                } else {
+                    offlineBadge.classList.remove('hidden');
+                }
+            }
+
+            /**
+             * Incrementos 1 e 2: Manipulação de cores RGB/Hex (2 ou 3 paradas)
+             */
+            function hexToRgb(hex) {
+                const clean = hex.replace('#', '');
+                return {
+                    r: parseInt(clean.substring(0, 2), 16),
+                    g: parseInt(clean.substring(2, 4), 16),
+                    b: parseInt(clean.substring(4, 6), 16)
+                };
+            }
+
+            function rgbToHex(r, g, b) {
+                return [r, g, b].map(channel => {
+                    const hex = Math.round(channel).toString(16);
+                    return hex.length === 1 ? '0' + hex : hex;
+                }).join('').toUpperCase();
+            }
+
+            function interpolateSegment(startHex, endHex, steps) {
+                if (steps <= 1) return [startHex.replace('#', '').toUpperCase()];
+                const start = hexToRgb(startHex);
+                const end = hexToRgb(endHex);
+                const palette = [];
+
+                for (let i = 0; i < steps; i++) {
+                    const ratio = i / (steps - 1);
+                    const r = start.r + ratio * (end.r - start.r);
+                    const g = start.g + ratio * (end.g - start.g);
+                    const b = start.b + ratio * (end.b - start.b);
+                    palette.push(rgbToHex(r, g, b));
+                }
+                return palette;
+            }
+
+            function interpolateColors(startHex, endHex, steps, midHex = null) {
+                if (!midHex || steps <= 2) {
+                    return interpolateSegment(startHex, endHex, steps);
+                }
+
+                // Interpola de Start -> Mid na primeira metade e Mid -> End na segunda metade
+                const midIndex = Math.floor((steps - 1) / 2);
+                const firstHalfSteps = midIndex + 1;
+                const secondHalfSteps = steps - midIndex;
+
+                const firstHalf = interpolateSegment(startHex, midHex, firstHalfSteps);
+                const secondHalf = interpolateSegment(midHex, endHex, secondHalfSteps).slice(1);
+
+                return [...firstHalf, ...secondHalf];
+            }
+
+            function setMidColorEnabled(enabled) {
+                useMidColor = Boolean(enabled);
+                if (useMidColor) {
+                    midColorContainer.classList.remove('hidden');
+                    swapStartMidWrapper.classList.remove('hidden');
+                    colorsGrid.classList.remove('sm:grid-cols-[1fr_auto_1fr]');
+                    colorsGrid.classList.add('sm:grid-cols-[1fr_auto_1fr_auto_1fr]');
+                    swapColorsBtn.title = 'Trocar Cor do Meio com Cor Final';
+                    toggleMidColorBtn.textContent = '− Remover Cor do Meio';
+                } else {
+                    midColorContainer.classList.add('hidden');
+                    swapStartMidWrapper.classList.add('hidden');
+                    colorsGrid.classList.remove('sm:grid-cols-[1fr_auto_1fr_auto_1fr]');
+                    colorsGrid.classList.add('sm:grid-cols-[1fr_auto_1fr]');
+                    swapColorsBtn.title = 'Inverter Cor Inicial com Cor Final';
+                    toggleMidColorBtn.textContent = '+ Adicionar Cor do Meio';
+                }
+            }
+
+            /**
+             * Web API: URLSearchParams + History API para links compartilháveis
+             */
+            function syncUrlParams() {
+                try {
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('text', inputText.value);
+                    url.searchParams.set('c1', colorStart.value.replace('#', ''));
+                    if (useMidColor) {
+                        url.searchParams.set('cm', colorMid.value.replace('#', ''));
+                    } else {
+                        url.searchParams.delete('cm');
+                    }
+                    url.searchParams.set('c2', colorEnd.value.replace('#', ''));
+                    url.searchParams.set('fmt', formatSelect.value);
+
+                    const styles = [
+                        isBold ? 'b' : '',
+                        isItalic ? 'i' : '',
+                        isUnderline ? 'u' : '',
+                        isStrike ? 's' : ''
+                    ].join('');
+
+                    if (styles) {
+                        url.searchParams.set('st', styles);
+                    } else {
+                        url.searchParams.delete('st');
+                    }
+
+                    window.history.replaceState(null, '', url.toString());
+                } catch (e) {
+                    // Ignora em contextos sandboxed sem permissão de history
+                }
+            }
+
+            function loadFromUrlParams() {
+                try {
+                    const params = new URLSearchParams(window.location.search);
+                    if (!params.has('text') && !params.has('c1') && !params.has('c2')) return false;
+
+                    const hexPattern = /^[0-9a-fA-F]{6}$/;
+                    if (params.has('text')) inputText.value = params.get('text').slice(0, 256);
+                    if (hexPattern.test(params.get('c1') || '')) colorStart.value = '#' + params.get('c1');
+                    if (hexPattern.test(params.get('c2') || '')) colorEnd.value = '#' + params.get('c2');
+
+                    if (hexPattern.test(params.get('cm') || '')) {
+                        colorMid.value = '#' + params.get('cm');
+                        setMidColorEnabled(true);
+                    } else {
+                        setMidColorEnabled(false);
+                    }
+
+                    const validFormats = ['ampersand', 'legacy', 'minimessage', 'motd', 'json'];
+                    if (validFormats.includes(params.get('fmt'))) {
+                        formatSelect.value = params.get('fmt');
+                    }
+
+                    const st = params.get('st') || '';
+                    isBold = st.includes('b');
+                    isItalic = st.includes('i');
+                    isUnderline = st.includes('u');
+                    isStrike = st.includes('s');
+
+                    return true;
+                } catch (e) {
+                    return false;
+                }
+            }
+
+            /**
+             * Incremento 3: Persistência de preferências no localStorage
+             */
+            function savePreferences() {
+                try {
+                    const prefs = {
+                        text: inputText.value,
+                        start: colorStart.value,
+                        mid: colorMid.value,
+                        useMid: useMidColor,
+                        end: colorEnd.value,
+                        format: formatSelect.value,
+                        previewSize: previewSizeSelect.value,
+                        bold: isBold,
+                        italic: isItalic,
+                        underline: isUnderline,
+                        strike: isStrike,
+                        serverIp: serverIpInput.value
+                    };
+                    localStorage.setItem(STORAGE_PREFS_KEY, JSON.stringify(prefs));
+                } catch (e) {
+                    console.warn('localStorage indisponível:', e);
+                }
+            }
+
+            function loadPreferences() {
+                try {
+                    const raw = localStorage.getItem(STORAGE_PREFS_KEY);
+                    if (!raw) return;
+                    const prefs = JSON.parse(raw);
+
+                    if (typeof prefs.text === 'string') inputText.value = prefs.text;
+                    if (prefs.start) colorStart.value = prefs.start;
+                    if (prefs.mid) colorMid.value = prefs.mid;
+                    setMidColorEnabled(Boolean(prefs.useMid));
+                    if (prefs.end) colorEnd.value = prefs.end;
+                    if (prefs.format) formatSelect.value = prefs.format;
+                    if (prefs.previewSize) previewSizeSelect.value = prefs.previewSize;
+                    if (typeof prefs.serverIp === 'string') serverIpInput.value = prefs.serverIp;
+
+                    isBold = Boolean(prefs.bold);
+                    isItalic = Boolean(prefs.italic);
+                    isUnderline = Boolean(prefs.underline);
+                    isStrike = Boolean(prefs.strike);
+                } catch (e) {
+                    console.warn('Erro ao restaurar preferências:', e);
+                }
+            }
+
+            function getFavorites() {
+                try {
+                    const raw = localStorage.getItem(STORAGE_FAVS_KEY);
+                    return raw ? JSON.parse(raw) : [];
+                } catch (e) {
+                    return [];
+                }
+            }
+
+            function saveFavoriteItem() {
+                const text = inputText.value.trim();
+                if (!text) return;
+
+                const favorites = getFavorites();
+                const newItem = {
+                    id: Date.now().toString(),
+                    text,
+                    start: colorStart.value.toUpperCase(),
+                    mid: useMidColor ? colorMid.value.toUpperCase() : null,
+                    end: colorEnd.value.toUpperCase(),
+                    format: formatSelect.value,
+                    bold: isBold,
+                    italic: isItalic,
+                    underline: isUnderline,
+                    strike: isStrike,
+                    code: outputCode.value
+                };
+
+                const filtered = favorites.filter(f => !(f.text === newItem.text && f.start === newItem.start && f.mid === newItem.mid && f.end === newItem.end && f.format === newItem.format));
+                filtered.unshift(newItem);
+
+                const trimmed = filtered.slice(0, 10);
+                try {
+                    localStorage.setItem(STORAGE_FAVS_KEY, JSON.stringify(trimmed));
+                } catch (e) {
+                    console.warn('Falha ao salvar favorito:', e);
+                }
+
+                renderFavorites();
+                showWebApiToast('Gradiente salvo nos favoritos locais!', 'success');
+            }
+
+            function removeFavoriteItem(id) {
+                const updated = getFavorites().filter(item => item.id !== id);
+                try {
+                    localStorage.setItem(STORAGE_FAVS_KEY, JSON.stringify(updated));
+                } catch (e) {
+                    console.warn('Falha ao remover favorito:', e);
+                }
+                renderFavorites();
+            }
+
+            function applyFavoriteItem(item) {
+                inputText.value = item.text;
+                colorStart.value = item.start;
+                if (item.mid) {
+                    colorMid.value = item.mid;
+                    setMidColorEnabled(true);
+                } else {
+                    setMidColorEnabled(false);
+                }
+                colorEnd.value = item.end;
+                formatSelect.value = item.format;
+                isBold = Boolean(item.bold);
+                isItalic = Boolean(item.italic);
+                isUnderline = Boolean(item.underline);
+                isStrike = Boolean(item.strike);
+
+                updateAllToggleButtons();
+                generate();
+                showWebApiToast('Favorito carregado no editor!', 'neutral');
+            }
+
+            function renderFavorites() {
+                const favorites = getFavorites();
+                favoritesList.innerHTML = '';
+
+                if (favorites.length === 0) {
+                    clearFavoritesBtn.classList.add('hidden');
+                    const emptyMsg = document.createElement('p');
+                    emptyMsg.className = 'text-xs text-slate-500 italic py-2';
+                    emptyMsg.textContent = 'Nenhum favorito salvo ainda. Clique em "Salvar Favorito" para guardar suas combinações.';
+                    favoritesList.appendChild(emptyMsg);
+                    return;
+                }
+
+                clearFavoritesBtn.classList.remove('hidden');
+
+                favorites.forEach(item => {
+                    const row = document.createElement('div');
+                    row.className = 'flex items-center justify-between gap-2 bg-slate-900/90 border border-slate-700/80 rounded-xl px-3 py-2 text-xs';
+
+                    const infoBtn = document.createElement('button');
+                    infoBtn.type = 'button';
+                    infoBtn.className = 'flex items-center gap-2.5 flex-1 min-w-0 text-left hover:opacity-90 transition cursor-pointer';
+                    infoBtn.title = 'Clique para carregar este gradiente';
+
+                    const swatch = document.createElement('span');
+                    swatch.className = 'w-6 h-4 rounded shrink-0 border border-slate-600';
+                    swatch.style.background = item.mid
+                        ? `linear-gradient(90deg, ${item.start}, ${item.mid}, ${item.end})`
+                        : `linear-gradient(90deg, ${item.start}, ${item.end})`;
+
+                    const textSpan = document.createElement('span');
+                    textSpan.className = 'text-slate-200 font-medium truncate';
+                    textSpan.textContent = item.text;
+
+                    const formatTag = document.createElement('span');
+                    formatTag.className = 'text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700 shrink-0';
+                    formatTag.textContent = item.format;
+
+                    infoBtn.appendChild(swatch);
+                    infoBtn.appendChild(textSpan);
+                    infoBtn.appendChild(formatTag);
+                    infoBtn.addEventListener('click', () => applyFavoriteItem(item));
+
+                    const delBtn = document.createElement('button');
+                    delBtn.type = 'button';
+                    delBtn.className = 'text-slate-500 hover:text-rose-400 p-1 transition cursor-pointer shrink-0';
+                    delBtn.title = 'Remover favorito';
+                    delBtn.setAttribute('aria-label', 'Remover favorito');
+                    delBtn.innerHTML = '&times;';
+                    delBtn.addEventListener('click', () => removeFavoriteItem(item.id));
+
+                    row.appendChild(infoBtn);
+                    row.appendChild(delBtn);
+                    favoritesList.appendChild(row);
+                });
+            }
+
+            /**
+             * Incremento 2: Atualização dinâmica do DOM e pré-visualização
+             */
+            function updateToggleStyle(button, active) {
+                if (active) {
+                    button.classList.remove('bg-slate-900', 'text-slate-300', 'border-slate-700');
+                    button.classList.add('bg-emerald-500', 'text-slate-950', 'border-emerald-500', 'font-bold');
+                } else {
+                    button.classList.add('bg-slate-900', 'text-slate-300', 'border-slate-700');
+                    button.classList.remove('bg-emerald-500', 'text-slate-950', 'border-emerald-500', 'font-bold');
+                }
+            }
+
+            function updateAllToggleButtons() {
+                updateToggleStyle(btnBold, isBold);
+                updateToggleStyle(btnItalic, isItalic);
+                updateToggleStyle(btnUnderline, isUnderline);
+                updateToggleStyle(btnStrike, isStrike);
+            }
+
+            function applyPreviewFontSize(charLength) {
+                const mode = previewSizeSelect.value;
+                previewBox.classList.remove('text-sm', 'text-base', 'text-lg', 'text-xl', 'text-2xl', 'sm:text-lg', 'sm:text-xl', 'sm:text-2xl', 'sm:text-3xl');
+
+                if (mode === 'sm') {
+                    previewBox.classList.add('text-sm', 'sm:text-base');
+                } else if (mode === 'md') {
+                    previewBox.classList.add('text-base', 'sm:text-xl');
+                } else if (mode === 'lg') {
+                    previewBox.classList.add('text-xl', 'sm:text-3xl');
+                } else {
+                    if (charLength > 140) {
+                        previewBox.classList.add('text-sm', 'sm:text-base');
+                    } else if (charLength > 70) {
+                        previewBox.classList.add('text-base', 'sm:text-lg');
+                    } else {
+                        previewBox.classList.add('text-lg', 'sm:text-2xl');
+                    }
+                }
+            }
+
+            function renderGradientSpans(container, chars, gradient) {
+                container.innerHTML = '';
+                let colorIdx = 0;
+
+                const decorations = [];
+                if (isUnderline) decorations.push('underline');
+                if (isStrike) decorations.push('line-through');
+                const textDecorationValue = decorations.length > 0 ? decorations.join(' ') : 'none';
+
+                chars.forEach(char => {
+                    const span = document.createElement('span');
+                    span.textContent = char;
+
+                    if (isBold) span.style.fontWeight = '700';
+                    if (isItalic) span.style.fontStyle = 'italic';
+                    span.style.textDecoration = textDecorationValue;
+
+                    const activeHex = char !== ' '
+                        ? gradient[colorIdx++]
+                        : gradient[Math.min(colorIdx, gradient.length - 1)];
+
+                    if (activeHex) {
+                        span.style.color = '#' + activeHex;
+                    }
+                    container.appendChild(span);
+                });
+            }
+
+            function updateVanillaLimitIndicator(codeLength) {
+                if (!vanillaLimitBadge) return;
+                vanillaLimitBadge.classList.remove(
+                    'bg-emerald-500/10', 'border-emerald-500/40', 'text-emerald-300',
+                    'bg-amber-500/10', 'border-amber-500/40', 'text-amber-300'
+                );
+
+                if (codeLength <= 256) {
+                    vanillaLimitBadge.classList.add('bg-emerald-500/10', 'border-emerald-500/40', 'text-emerald-300');
+                    vanillaLimitBadge.textContent = `${codeLength} chars • Cabe no chat vanilla (≤ 256)`;
+                } else {
+                    vanillaLimitBadge.classList.add('bg-amber-500/10', 'border-amber-500/40', 'text-amber-300');
+                    vanillaLimitBadge.textContent = `${codeLength} chars • Excede o chat (use em plugins/arquivos)`;
+                }
+            }
+
+            function generate() {
+                const rawText = inputText.value;
+                const text = rawText.length > 0 ? rawText : ' ';
+                const start = colorStart.value;
+                const mid = useMidColor ? colorMid.value : null;
+                const end = colorEnd.value;
+                const format = formatSelect.value;
+
+                // Atualiza contador e rótulos Hex
+                charCounter.textContent = `${rawText.length} / 256 caracteres`;
+                hexStartLabel.textContent = start.toUpperCase();
+                hexMidLabel.textContent = colorMid.value.toUpperCase();
+                hexEndLabel.textContent = end.toUpperCase();
+                applyPreviewFontSize(rawText.length);
+
+                const chars = Array.from(text);
+                const nonSpaceCount = chars.filter(c => c !== ' ').length;
+                const gradient = interpolateColors(start, end, Math.max(nonSpaceCount, 1), mid);
+
+                // Atualiza a caixa de pré-visualização principal e a linha MOTD do servidor
+                renderGradientSpans(previewBox, chars, gradient);
+                renderGradientSpans(motdGradientLine, chars, gradient);
+
+                // Mapeia cores por caractere para gerar o código final
+                let colorIdx = 0;
+                const charColors = chars.map(char => {
+                    if (char === ' ') return { char: ' ', hex: null };
+                    return { char, hex: gradient[colorIdx++] };
+                });
+
+                let result = '';
+                const legacyStyleCodes =
+                    (isBold ? '&l' : '') +
+                    (isItalic ? '&o' : '') +
+                    (isUnderline ? '&n' : '') +
+                    (isStrike ? '&m' : '');
+
+                const motdStyleCodes =
+                    (isBold ? '\\u00A7l' : '') +
+                    (isItalic ? '\\u00A7o' : '') +
+                    (isUnderline ? '\\u00A7n' : '') +
+                    (isStrike ? '\\u00A7m' : '');
+
+                if (format === 'minimessage') {
+                    let inner = rawText;
+                    if (isBold) inner = `<b>${inner}</b>`;
+                    if (isItalic) inner = `<i>${inner}</i>`;
+                    if (isUnderline) inner = `<u>${inner}</u>`;
+                    if (isStrike) inner = `<st>${inner}</st>`;
+                    const stops = mid
+                        ? `${start.toUpperCase()}:${mid.toUpperCase()}:${end.toUpperCase()}`
+                        : `${start.toUpperCase()}:${end.toUpperCase()}`;
+                    result = `<gradient:${stops}>${inner}</gradient>`;
+                } else if (format === 'json') {
+                    const components = ['""'];
+                    charColors.forEach(item => {
+                        if (item.char === ' ') {
+                            const spaceObj = { text: ' ' };
+                            if (isUnderline) spaceObj.underlined = true;
+                            if (isStrike) spaceObj.strikethrough = true;
+                            components.push(JSON.stringify(spaceObj));
+                        } else {
+                            const obj = { text: item.char, color: '#' + item.hex };
+                            if (isBold) obj.bold = true;
+                            if (isItalic) obj.italic = true;
+                            if (isUnderline) obj.underlined = true;
+                            if (isStrike) obj.strikethrough = true;
+                            components.push(JSON.stringify(obj));
+                        }
+                    });
+                    result = `/tellraw @a [${components.join(',')}]`;
+                } else {
+                    charColors.forEach(item => {
+                        if (item.char === ' ') {
+                            result += ' ';
+                            return;
+                        }
+                        if (format === 'ampersand') {
+                            result += `&#${item.hex}${legacyStyleCodes}${item.char}`;
+                        } else if (format === 'legacy') {
+                            const expanded = item.hex.split('').map(c => '&' + c).join('');
+                            result += `&x${expanded}${legacyStyleCodes}${item.char}`;
+                        } else if (format === 'motd') {
+                            const expanded = item.hex.split('').map(c => '\\u00A7' + c).join('');
+                            result += `\\u00A7x${expanded}${motdStyleCodes}${item.char}`;
+                        }
+                    });
+                }
+
+                outputCode.value = result;
+                updateVanillaLimitIndicator(result.length);
+                savePreferences();
+                syncUrlParams();
+            }
+
+            /**
+             * Incrementos 4 e 5: APIs públicas (fetch + JSON) com assincronismo, concorrência (Promise.all) e tratamento offline
+             */
+            async function fetchServerStatus() {
+                const rawIp = serverIpInput.value.trim();
+                if (!rawIp) return;
+
+                if (!navigator.onLine) {
+                    serverTitleLabel.textContent = rawIp;
+                    serverPlayersLabel.textContent = 'Sem rede';
+                    serverPlayersLabel.className = 'text-xs font-mono text-amber-400 shrink-0';
+                    serverIconImg.src = DEFAULT_SERVER_ICON_SVG;
+                    motdApiLine.textContent = 'Você está offline. Conecte-se à internet para consultar servidores.';
+                    apiStatusFeedback.textContent = 'Sem conexão com a internet. O gerador de gradientes continua funcionando offline.';
+                    apiStatusFeedback.classList.remove('hidden');
+                    return;
+                }
+
+                const encodedIp = encodeURIComponent(rawIp);
+                fetchServerBtn.disabled = true;
+                fetchBtnLabel.textContent = 'Consultando...';
+                apiStatusFeedback.classList.add('hidden');
+
+                try {
+                    const [resMcsrv, resMcstatus] = await Promise.all([
+                        fetch(`https://api.mcsrvstat.us/3/${encodedIp}`)
+                            .then(r => r.ok ? r.json() : null)
+                            .catch(() => null),
+                        fetch(`https://api.mcstatus.io/v2/status/java/${encodedIp}`)
+                            .then(r => r.ok ? r.json() : null)
+                            .catch(() => null)
+                    ]);
+
+                    const isOnline = Boolean((resMcsrv && resMcsrv.online) || (resMcstatus && resMcstatus.online));
+
+                    if (!isOnline) {
+                        serverTitleLabel.textContent = rawIp;
+                        serverPlayersLabel.textContent = 'Offline';
+                        serverPlayersLabel.className = 'text-xs font-mono text-rose-400 shrink-0';
+                        serverIconImg.src = DEFAULT_SERVER_ICON_SVG;
+                        motdApiLine.textContent = 'Servidor offline ou endereço não encontrado.';
+                        apiStatusFeedback.textContent = !navigator.onLine
+                            ? 'A conexão com a internet caiu durante a consulta.'
+                            : 'Consulta concluída: nenhuma das APIs retornou o servidor como online.';
+                        apiStatusFeedback.classList.remove('hidden');
+                        return;
+                    }
+
+                    const onlinePlayers = resMcsrv?.players?.online ?? resMcstatus?.players?.online ?? 0;
+                    const maxPlayers = resMcsrv?.players?.max ?? resMcstatus?.players?.max ?? 0;
+                    const cleanMotd =
+                        (Array.isArray(resMcsrv?.motd?.clean) && resMcsrv.motd.clean[0]) ||
+                        (typeof resMcstatus?.motd?.clean === 'string' && resMcstatus.motd.clean.split('\n')[0]) ||
+                        'Servidor Minecraft Online';
+
+                    const iconUrl =
+                        (typeof resMcsrv?.icon === 'string' && resMcsrv.icon.startsWith('data:image') ? resMcsrv.icon : null) ||
+                        `https://api.mcsrvstat.us/icon/${encodedIp}`;
+
+                    serverTitleLabel.textContent = rawIp;
+                    serverPlayersLabel.textContent = `${onlinePlayers}/${maxPlayers}`;
+                    serverPlayersLabel.className = 'text-xs font-mono text-emerald-400 shrink-0';
+                    serverIconImg.src = iconUrl;
+                    motdApiLine.textContent = cleanMotd;
+
+                    const activeSources = [
+                        resMcsrv ? 'mcsrvstat.us' : null,
+                        resMcstatus ? 'mcstatus.io' : null
+                    ].filter(Boolean).join(' + ');
+
+                    apiStatusFeedback.textContent = `Dados sincronizados via Promise.all (${activeSources}).`;
+                    apiStatusFeedback.classList.remove('hidden');
+                    savePreferences();
+                } catch (err) {
+                    apiStatusFeedback.textContent = 'Erro de rede ao consultar o status do servidor.';
+                    apiStatusFeedback.classList.remove('hidden');
+                } finally {
+                    fetchServerBtn.disabled = false;
+                    fetchBtnLabel.textContent = 'Buscar Servidor';
+                }
+            }
+
+            /**
+             * Feedback discreto para ações de Web APIs
+             */
+            function showWebApiToast(message, variant = 'neutral') {
+                webApiToast.textContent = message;
+                webApiToast.classList.remove(
+                    'hidden',
+                    'bg-emerald-500/10', 'border-emerald-500/40', 'text-emerald-300',
+                    'bg-amber-500/10', 'border-amber-500/40', 'text-amber-300',
+                    'bg-slate-900', 'border-slate-700', 'text-slate-300'
+                );
+
+                if (variant === 'success') {
+                    webApiToast.classList.add('bg-emerald-500/10', 'border-emerald-500/40', 'text-emerald-300');
+                } else if (variant === 'warning') {
+                    webApiToast.classList.add('bg-amber-500/10', 'border-amber-500/40', 'text-amber-300');
+                } else {
+                    webApiToast.classList.add('bg-slate-900', 'border-slate-700', 'text-slate-300');
+                }
+
+                clearTimeout(toastTimeout);
+                toastTimeout = setTimeout(() => {
+                    webApiToast.classList.add('hidden');
+                }, 3800);
+            }
+
+            /**
+             * Incremento 6: Web APIs Nativas (Clipboard, File/Blob, Web Share)
+             */
+            async function copyToClipboard() {
+                const textToCopy = outputCode.value;
+                if (!textToCopy) return;
+
+                try {
+                    if (navigator.clipboard && window.isSecureContext) {
+                        await navigator.clipboard.writeText(textToCopy);
+                    } else {
+                        outputCode.select();
+                        document.execCommand('copy');
+                        window.getSelection().removeAllRanges();
+                    }
+
+                    copyBtnText.textContent = 'Copiado!';
+                    copyBtn.classList.replace('bg-emerald-500', 'bg-teal-400');
+
+                    clearTimeout(copyTimeout);
+                    copyTimeout = setTimeout(() => {
+                        copyBtnText.textContent = 'Copiar Código';
+                        copyBtn.classList.replace('bg-teal-400', 'bg-emerald-500');
+                    }, 1800);
+                } catch (err) {
+                    outputCode.select();
+                    document.execCommand('copy');
+                }
+            }
+
+            function downloadCodeAsTxt() {
+                const paletteLabel = useMidColor
+                    ? `${colorStart.value.toUpperCase()} -> ${colorMid.value.toUpperCase()} -> ${colorEnd.value.toUpperCase()}`
+                    : `${colorStart.value.toUpperCase()} -> ${colorEnd.value.toUpperCase()}`;
+
+                const content = [
+                    '=== MC Gradient RGB — Código Gerado ===',
+                    `Texto Original: ${inputText.value}`,
+                    `Cores: ${paletteLabel}`,
+                    `Formato: ${formatSelect.options[formatSelect.selectedIndex].text}`,
+                    '',
+                    'Código:',
+                    outputCode.value
+                ].join('\n');
+
+                const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'minecraft-gradient.txt';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+                showWebApiToast('Arquivo minecraft-gradient.txt baixado!', 'success');
+            }
+
+            async function shareGradient() {
+                const sharePayload = {
+                    title: 'MC Gradient RGB — Texto Degradê Minecraft',
+                    text: `Texto: "${inputText.value}"\nCódigo: ${outputCode.value}`,
+                    url: window.location.href
+                };
+
+                if (typeof navigator.share === 'function') {
+                    try {
+                        await navigator.share(sharePayload);
+                        shareBtnText.textContent = 'Partilhado!';
+                        showWebApiToast('Menu de compartilhamento aberto com sucesso!', 'success');
+                    } catch (err) {
+                        if (err && err.name === 'AbortError') {
+                            showWebApiToast('Compartilhamento cancelado.', 'neutral');
+                            return;
+                        }
+                        await fallbackCopyShare(sharePayload);
+                        return;
+                    }
+                } else {
+                    await fallbackCopyShare(sharePayload);
+                    return;
+                }
+
+                clearTimeout(shareTimeout);
+                shareTimeout = setTimeout(() => {
+                    shareBtnText.textContent = 'Partilhar';
+                }, 2200);
+            }
+
+            async function fallbackCopyShare(sharePayload) {
+                const fullShareText = `${sharePayload.title}\n${sharePayload.text}\nLink: ${sharePayload.url}`;
+                try {
+                    if (navigator.clipboard && window.isSecureContext) {
+                        await navigator.clipboard.writeText(fullShareText);
+                    } else {
+                        const tempArea = document.createElement('textarea');
+                        tempArea.value = fullShareText;
+                        document.body.appendChild(tempArea);
+                        tempArea.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(tempArea);
+                    }
+                    shareBtnText.textContent = 'Link Copiado!';
+                    showWebApiToast('Web Share indisponível neste navegador — código e link copiados!', 'warning');
+                } catch (e) {
+                    await copyToClipboard();
+                    showWebApiToast('Código copiado para a área de transferência!', 'warning');
+                }
+
+                clearTimeout(shareTimeout);
+                shareTimeout = setTimeout(() => {
+                    shareBtnText.textContent = 'Partilhar';
+                }, 2400);
+            }
+
+            // Listeners de rede (Online / Offline)
+            window.addEventListener('online', () => {
+                updateNetworkStatusUI();
+                showWebApiToast('Conexão restabelecida! Consulta de servidores disponível.', 'success');
+            });
+
+            window.addEventListener('offline', () => {
+                updateNetworkStatusUI();
+                showWebApiToast('Você ficou offline. O gerador e os favoritos continuam funcionando.', 'warning');
+            });
+
+            // Listeners de eventos do gerador
+            [inputText, colorStart, colorMid, colorEnd, formatSelect, previewSizeSelect].forEach(el => {
+                el.addEventListener('input', generate);
+            });
+
+            toggleMidColorBtn.addEventListener('click', () => {
+                setMidColorEnabled(!useMidColor);
+                generate();
+            });
+
+            swapStartMidBtn.addEventListener('click', () => {
+                const temp = colorStart.value;
+                colorStart.value = colorMid.value;
+                colorMid.value = temp;
+                generate();
+            });
+
+            swapColorsBtn.addEventListener('click', () => {
+                if (useMidColor) {
+                    const temp = colorMid.value;
+                    colorMid.value = colorEnd.value;
+                    colorEnd.value = temp;
+                } else {
+                    const temp = colorStart.value;
+                    colorStart.value = colorEnd.value;
+                    colorEnd.value = temp;
+                }
+                generate();
+            });
+
+            presetBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    colorStart.value = btn.dataset.start;
+                    colorEnd.value = btn.dataset.end;
+                    if (btn.dataset.mid) {
+                        colorMid.value = btn.dataset.mid;
+                        setMidColorEnabled(true);
+                    } else {
+                        setMidColorEnabled(false);
+                    }
+                    generate();
+                });
+            });
+
+            btnBold.addEventListener('click', () => {
+                isBold = !isBold;
+                updateToggleStyle(btnBold, isBold);
+                generate();
+            });
+
+            btnItalic.addEventListener('click', () => {
+                isItalic = !isItalic;
+                updateToggleStyle(btnItalic, isItalic);
+                generate();
+            });
+
+            btnUnderline.addEventListener('click', () => {
+                isUnderline = !isUnderline;
+                updateToggleStyle(btnUnderline, isUnderline);
+                generate();
+            });
+
+            btnStrike.addEventListener('click', () => {
+                isStrike = !isStrike;
+                updateToggleStyle(btnStrike, isStrike);
+                generate();
+            });
+
+            copyBtn.addEventListener('click', copyToClipboard);
+            downloadBtn.addEventListener('click', downloadCodeAsTxt);
+            shareBtn.addEventListener('click', shareGradient);
+
+            // Listeners do Testador de Servidor e Favoritos
+            fetchServerBtn.addEventListener('click', fetchServerStatus);
+            serverIpInput.addEventListener('keydown', e => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    fetchServerStatus();
+                }
+            });
+
+            serverIconImg.addEventListener('error', () => {
+                if (serverIconImg.src !== DEFAULT_SERVER_ICON_SVG) {
+                    serverIconImg.src = DEFAULT_SERVER_ICON_SVG;
+                }
+            });
+
+            saveFavoriteBtn.addEventListener('click', saveFavoriteItem);
+            clearFavoritesBtn.addEventListener('click', () => {
+                try {
+                    localStorage.removeItem(STORAGE_FAVS_KEY);
+                } catch (e) {
+                    console.warn(e);
+                }
+                renderFavorites();
+            });
+
+            // Inicialização da aplicação (prioriza URL compartilhada; caso contrário usa localStorage)
+            updateNetworkStatusUI();
+            const loadedFromUrl = loadFromUrlParams();
+            if (!loadedFromUrl) {
+                loadPreferences();
+            }
+            updateAllToggleButtons();
+            renderFavorites();
+            generate();
+        })();
+    </script>
+</body>
+</html>
