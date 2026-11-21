@@ -7,6 +7,7 @@
     <meta name="description" content="Crie textos com degradê RGB e Hex para Minecraft em segundos. Suporte para EssentialsX (&#RRGGBB), Legacy Hex (&x), MiniMessage, MOTD e JSON Tellraw.">
     <meta name="keywords" content="minecraft rgb gradient, gerador texto degrade minecraft, hex minecraft motd, essentials hex, minimessage gradient">
     <meta name="author" content="Guilherme Antonio Pietrobiazzi">
+    <meta name="referrer" content="no-referrer">
 
     <!-- Favicon SVG Inline e Meta Tags Open Graph (SEO & Compartilhamento) -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2310b981' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z'/%3E%3Cpolyline points='3.27 6.96 12 12.01 20.73 6.96'/%3E%3Cline x1='12' y1='22.08' x2='12' y2='12'/%3E%3C/svg%3E">
@@ -758,15 +759,20 @@
                     const raw = localStorage.getItem(STORAGE_PREFS_KEY);
                     if (!raw) return;
                     const prefs = JSON.parse(raw);
+                    if (!prefs || typeof prefs !== 'object') return;
 
-                    if (typeof prefs.text === 'string') inputText.value = prefs.text;
-                    if (prefs.start) colorStart.value = prefs.start;
-                    if (prefs.mid) colorMid.value = prefs.mid;
+                    const hexPattern = /^#[0-9a-fA-F]{6}$/;
+                    const validFormats = ['ampersand', 'legacy', 'minimessage', 'motd', 'json'];
+                    const validSizes = ['auto', 'sm', 'md', 'lg'];
+
+                    if (typeof prefs.text === 'string') inputText.value = prefs.text.slice(0, 256);
+                    if (hexPattern.test(prefs.start || '')) colorStart.value = prefs.start;
+                    if (hexPattern.test(prefs.mid || '')) colorMid.value = prefs.mid;
                     setMidColorEnabled(Boolean(prefs.useMid));
-                    if (prefs.end) colorEnd.value = prefs.end;
-                    if (prefs.format) formatSelect.value = prefs.format;
-                    if (prefs.previewSize) previewSizeSelect.value = prefs.previewSize;
-                    if (typeof prefs.serverIp === 'string') serverIpInput.value = prefs.serverIp;
+                    if (hexPattern.test(prefs.end || '')) colorEnd.value = prefs.end;
+                    if (validFormats.includes(prefs.format)) formatSelect.value = prefs.format;
+                    if (validSizes.includes(prefs.previewSize)) previewSizeSelect.value = prefs.previewSize;
+                    if (typeof prefs.serverIp === 'string') serverIpInput.value = prefs.serverIp.slice(0, 120);
 
                     isBold = Boolean(prefs.bold);
                     isItalic = Boolean(prefs.italic);
@@ -780,7 +786,29 @@
             function getFavorites() {
                 try {
                     const raw = localStorage.getItem(STORAGE_FAVS_KEY);
-                    return raw ? JSON.parse(raw) : [];
+                    if (!raw) return [];
+                    const parsed = JSON.parse(raw);
+                    if (!Array.isArray(parsed)) return [];
+
+                    const hexPattern = /^#[0-9a-fA-F]{6}$/;
+                    const validFormats = ['ampersand', 'legacy', 'minimessage', 'motd', 'json'];
+
+                    return parsed
+                        .filter(item =>
+                            item &&
+                            typeof item === 'object' &&
+                            typeof item.text === 'string' &&
+                            hexPattern.test(item.start || '') &&
+                            hexPattern.test(item.end || '') &&
+                            (!item.mid || hexPattern.test(item.mid)) &&
+                            validFormats.includes(item.format)
+                        )
+                        .slice(0, 10)
+                        .map(item => ({
+                            ...item,
+                            id: String(item.id || Date.now()),
+                            text: item.text.slice(0, 256)
+                        }));
                 } catch (e) {
                     return [];
                 }
@@ -1088,11 +1116,39 @@
             }
 
             /**
-             * Incrementos 4 e 5: APIs públicas (fetch + JSON) com assincronismo, concorrência (Promise.all) e tratamento offline
+             * Incrementos 4 e 5: APIs públicas (fetch + JSON) com assincronismo, concorrência (Promise.all), timeout e validação
              */
+            function fetchWithTimeout(url, timeoutMs = 6000) {
+                const controller = new AbortController();
+                const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+                return fetch(url, {
+                    signal: controller.signal,
+                    referrerPolicy: 'no-referrer'
+                })
+                    .then(r => (r.ok ? r.json() : null))
+                    .catch(() => null)
+                    .finally(() => clearTimeout(timer));
+            }
+
+            function isSafeRasterDataUrl(value) {
+                return (
+                    typeof value === 'string' &&
+                    /^data:image\/(png|jpeg|jpg|webp);base64,[A-Za-z0-9+/=]+$/.test(value)
+                );
+            }
+
             async function fetchServerStatus() {
                 const rawIp = serverIpInput.value.trim();
                 if (!rawIp) return;
+
+                // Validação estrita de hostname/IP e porta opcional
+                const hostPattern = /^[a-zA-Z0-9.-]+(:[0-9]{1,5})?$/;
+                if (!hostPattern.test(rawIp) || rawIp.length > 120) {
+                    apiStatusFeedback.textContent = 'Endereço inválido. Informe apenas o domínio ou IP do servidor (ex.: mc.hypixel.net).';
+                    apiStatusFeedback.classList.remove('hidden');
+                    return;
+                }
 
                 if (!navigator.onLine) {
                     serverTitleLabel.textContent = rawIp;
@@ -1112,12 +1168,8 @@
 
                 try {
                     const [resMcsrv, resMcstatus] = await Promise.all([
-                        fetch(`https://api.mcsrvstat.us/3/${encodedIp}`)
-                            .then(r => r.ok ? r.json() : null)
-                            .catch(() => null),
-                        fetch(`https://api.mcstatus.io/v2/status/java/${encodedIp}`)
-                            .then(r => r.ok ? r.json() : null)
-                            .catch(() => null)
+                        fetchWithTimeout(`https://api.mcsrvstat.us/3/${encodedIp}`, 6000),
+                        fetchWithTimeout(`https://api.mcstatus.io/v2/status/java/${encodedIp}`, 6000)
                     ]);
 
                     const isOnline = Boolean((resMcsrv && resMcsrv.online) || (resMcstatus && resMcstatus.online));
@@ -1127,24 +1179,24 @@
                         serverPlayersLabel.textContent = 'Offline';
                         serverPlayersLabel.className = 'text-xs font-mono text-rose-400 shrink-0';
                         serverIconImg.src = DEFAULT_SERVER_ICON_SVG;
-                        motdApiLine.textContent = 'Servidor offline ou endereço não encontrado.';
+                        motdApiLine.textContent = 'Servidor offline, inacessível ou tempo limite excedido.';
                         apiStatusFeedback.textContent = !navigator.onLine
                             ? 'A conexão com a internet caiu durante a consulta.'
-                            : 'Consulta concluída: nenhuma das APIs retornou o servidor como online.';
+                            : 'Consulta concluída: servidor offline ou tempo de resposta excedido (6s).';
                         apiStatusFeedback.classList.remove('hidden');
                         return;
                     }
 
-                    const onlinePlayers = resMcsrv?.players?.online ?? resMcstatus?.players?.online ?? 0;
-                    const maxPlayers = resMcsrv?.players?.max ?? resMcstatus?.players?.max ?? 0;
+                    const onlinePlayers = Number(resMcsrv?.players?.online ?? resMcstatus?.players?.online ?? 0) || 0;
+                    const maxPlayers = Number(resMcsrv?.players?.max ?? resMcstatus?.players?.max ?? 0) || 0;
                     const cleanMotd =
-                        (Array.isArray(resMcsrv?.motd?.clean) && resMcsrv.motd.clean[0]) ||
+                        (Array.isArray(resMcsrv?.motd?.clean) && typeof resMcsrv.motd.clean[0] === 'string' && resMcsrv.motd.clean[0]) ||
                         (typeof resMcstatus?.motd?.clean === 'string' && resMcstatus.motd.clean.split('\n')[0]) ||
                         'Servidor Minecraft Online';
 
-                    const iconUrl =
-                        (typeof resMcsrv?.icon === 'string' && resMcsrv.icon.startsWith('data:image') ? resMcsrv.icon : null) ||
-                        `https://api.mcsrvstat.us/icon/${encodedIp}`;
+                    const iconUrl = isSafeRasterDataUrl(resMcsrv?.icon)
+                        ? resMcsrv.icon
+                        : `https://api.mcsrvstat.us/icon/${encodedIp}`;
 
                     serverTitleLabel.textContent = rawIp;
                     serverPlayersLabel.textContent = `${onlinePlayers}/${maxPlayers}`;
